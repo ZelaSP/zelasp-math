@@ -1,7 +1,7 @@
 # 🤖 Documentação do Uso de Inteligência Artificial — `prompts.md`
 
 **Disciplina:** Differentiated Problem Solving (Matemática / Cálculo)  
-**Projeto:** ZelaSP — Zeladoria Cidadã Inteligente  
+**Projeto:** ZelaSP — Zeladoria Cidadã Inteligente (Simulação Acadêmica)  
 **Global Solution 2026.2:** CitizenTech · FIAP  
 **Professor:** Prof. Jones Egydio  
 **Integrantes:**  
@@ -14,46 +14,45 @@
 
 ## 1. Ferramentas de IA Utilizadas e Finalidades
 
-* **Google Antigravity (Gemini & Claude):** Utilizado como copiloto analítico para estruturar a notação matemática das equações, conferir o passo a passo algébrico, apoiar na organização do script em Python (`DPS_ZelaSP_Modelagem_Matematica.py`), aprimorar a clareza dos textos explicativos e auxiliar na geração do relatório em HTML para exportação fiel do PDF sem falhas de glifos tipográficos.
+* **Google Antigravity (Gemini & Claude):** Utilizado como copiloto analítico para estruturar a notação matemática das equações, organizar o script Python (`DPS_ZelaSP_Modelagem_Matematica.py`), implementar o tratamento não negativo $\text{taxa\_operacional}(t) = \max(0, q(t))$ e gerar o relatório técnico em HTML/PDF sem falhas tipográficas.
 
 ---
 
 ## 2. Prompts Utilizados Durante o Desenvolvimento
 
 ### Prompt 1: Estruturação dos Requisitos Obrigatórios de DPS
-> *"Como estruturar um script Python (`.py`) de modelagem matemática para a Global Solution da FIAP (Differentiated Problem Solving com o Prof. Jones Egydio), cobrindo regressão por mínimos quadrados, derivadas passo a passo para otimização de pico, limites assintóticos de fila e integrais definidas com regra dos trapézios, aplicado ao fluxo de chamados de zeladoria pós-temporal em São Paulo?"*
+> *"Como estruturar um script Python (`.py`) de modelagem matemática para a Global Solution da FIAP (Differentiated Problem Solving com o Prof. Jones Egydio), cobrindo regressão por mínimos quadrados, derivadas para otimização de pico, limites de fila e integrais definidas com regra dos trapézios, aplicado a uma série temporal simulada de 24h?"*
 
 ### Prompt 2: Verificação Algébrica da Derivada e Raízes
-> *"Dada a função cúbica q(t) = a*t³ + b*t² + c*t + d ajustada para dados horários de um dia de 24h, faça o desenvolvimento manual das raízes da derivada q'(t) usando a fórmula de Bhaskara e aplique o teste da segunda derivada q''(t) para classificar o ponto de máximo e de mínimo."*
+> *"Dada a função cúbica q(t) = a*t³ + b*t² + c*t + d ajustada sobre a série simulada de 24h, faça o desenvolvimento analítico das raízes da derivada q'(t) usando Bhaskara, aplique o teste da segunda derivada q''(t) e analise as limitações do polinômio (subestimação do pico e valores negativos)."*
 
-### Prompt 3: Cálculo da Primitiva e Erro Relativo da Integral
-> *"Determine a primitiva analítica Q(t) de q(t) e calcule a integral definida no intervalo [0.5, 23.5] e [0, 24]. Compare o resultado com a soma discreta observada dos relatos para determinar o erro absoluto e o erro relativo percentual."*
+### Prompt 3: Uniformização com Taxa Operacional Não Negativa e Separação de Métricas
+> *"Defina taxa_operacional(t) = max(0, q(t)) em [0, 24], recalcule os gráficos, a integral operacional e os cenários de volume excedente acumulado acima de S = 35, mantendo q(t) apenas no estudo algébrico e distinguindo volume excedente acumulado de fila pendente discreta."*
 
-### Prompt 4: Revisão Factual, Consolidação em `.py` e Correção do PDF
-> *"Converta a modelagem matemática do notebook para um script Python autônomo (`DPS_ZelaSP_Modelagem_Matematica.py`) que gere os gráficos na pasta `imagens/` com os valores exatos de R², RMSE e máximo local calculados pelo NumPy/SciPy, alinhe o relatório técnico a esses mesmos valores reais e corrija a renderização do PDF para eliminar caracteres Unicode quebrados nas fórmulas."*
+### Prompt 4: Revisão de Escopo Acadêmico e Exportação do PDF
+> *"Reformule todo o texto do script, Markdown, README e HTML/PDF para deixar explícito que o estudo usa dados simulados e hipóteses acadêmicas, sem atribuir a série a sensores ou coleta real do SP156."*
 
 ---
 
 ## 3. Funcionalidades Desenvolvidas e Modificadas pelo Grupo
 
-1. **Contextualização com Bairros Reais de São Paulo:**
-   * *Ajuste do Grupo:* A IA sugeriu exemplos genéricos de cidades americanas ou bicicletas compartilhadas. O grupo substituiu e modelou o problema real de São Paulo nos bairros foco (**Jabaquara, Vila Mariana, Saúde, Bela Vista, Mooca e Vila Mascote**), focando nos relatos de cabos caídos energizados e bueiros abertos pós-chuva de verão.
-2. **Conferência Manual da Álgebra e Correção do Modelo:**
-   * A equipe recalculou no papel cada etapa do discriminante de Bhaskara ($\Delta = 1{,}59888$) e das raízes ($t = 15{,}58\text{ h}$ e $t = 1{,}16\text{ h}$), identificou divergências de arredondamento e de $R^2$ entre o texto inicial e a saída numérica real do `np.polyfit` ($q(15{,}58) = 43{,}55\text{ relatos/h}$, $R^2 = 0{,}7721$), corrigindo tanto o script quanto o relatório PDF.
-3. **Regra de Decisão de Projeto para a ZelaSP:**
-   * O grupo definiu a lógica do **Gatilho Preditivo de Contingência Territorial (GPCT)** baseado no par $(q(t), q'(t))$, transformando a teoria matemática em uma especificação de engenharia de software diretamente utilizável no aplicativo da CitizenTech.
+1. **Enquadramento Claro como Simulação Acadêmica:**
+   * *Ajuste do Grupo:* A equipe definiu os parâmetros sintéticos de 24 faixas horárias (com menor demanda na madrugada e pico de 62 relatos/h às 14h30) e explicitou que $S=35$, fator $1{,}40$, limiar $30$ e reforço $+4{,}85$ são hipóteses didáticas do exercício.
+2. **Padronização da Curva Não Negativa (`taxa_operacional(t) = max(0, q(t))`):**
+   * Na revisão crítica, identificamos que a integral bruta $\int_0^{24} q(t)\,dt = 516{,}36$ compensava trechos negativos do polinômio cúbico. Implementamos `criar_taxa_operacional(q)` no script Python, obtendo $\int_0^{24} \max(0, q(t))\,dt = 527{,}69\text{ relatos}$ (diferença de $2{,}07\%$ para $517$), e reconhecemos os três pontos de transição onde $q(t) = 0$ ($0{,}5606\text{ h}$, $1{,}7859\text{ h}$ e $22{,}7688\text{ h}$).
+3. **Análise Crítica de Limitações:**
+   * Registramos a subestimação do pico ($43{,}55$ vs $62$ simulado, $\approx 29{,}76\%$), distinguimos "volume excedente acumulado acima da capacidade" (integral contínua) de "fila pendente" (saldo discreto) e separamos claramente o estudo didático do GPCT do indicador simples presente no protótipo Web.
 
 ---
 
 ## 4. Verificação, Testes e Validação dos Resultados
 
-* **Teste de Aderência da Integral:** A integral calculada $\int_0^{24} q(t)\,dt = 516{,}36$ foi confrontada com a soma discreta dos dados reais ($517{,}00$). O erro relativo obtido de apenas $0{,}12\%$ validou a precisão do ajuste contínuo.
-* **Teste do Ponto de Máximo:** A derivada primeira avaliada em $t = 15{,}5789$ resultou exatamente em $0{,}0000$, e a segunda derivada resultou em $-1{,}2645 < 0$, confirmando rigorosamente o ápice do estresse operacional no meio da tarde ($q(15{,}5789) = 43{,}55\text{ relatos/h}$).
-* **Teste de Execução Autônoma (`.py`):** Os dados foram incorporados via `StringIO` no próprio `DPS_ZelaSP_Modelagem_Matematica.py`, permitindo execução direta em terminal sem arquivos externos nem conexão à internet, gerando os 3 gráficos em `imagens/`.
-* **Inspeção Visual do PDF:** Todas as páginas de `relatorio_tecnico_dps_zelasp.pdf` foram verificadas visualmente após a geração via HTML/Chrome Headless, confirmando a ausência de erros de fonte ou caixas pretas (`■`) nas equações.
+* **Teste de Consistência Numérica:** Execução de `DPS_ZelaSP_Modelagem_Matematica.py` reproduzindo exatamente os valores de referência: integral operacional $527{,}69$ ($2{,}07\%$), volume excedente $192{,}70$ (fator $1{,}40$), $119{,}69$ (fator $1{,}22$, $-37{,}9\%$), $42{,}41$ (fator $1{,}00$, $-78{,}0\%$) e $26{,}08$ (base deduplicada + reforço, $-38{,}5\%$ frente a $42{,}41$).
+* **Conferência dos Gráficos (`imagens/`):** Validação visual de `grafico1_dispersao.png`, `grafico2_ajustes.png` e `grafico3_integral.png` com legendas alinhadas à série simulada, aos trechos recortados em zero e ao volume excedente acumulado.
+* **Inspeção Visual do PDF:** Verificação de todas as páginas de `relatorio_tecnico_dps_zelasp.pdf` após geração via HTML e Chrome Headless.
 
 ---
 
 ## 5. Análise Crítica e Reflexão Ética
 
-A inteligência artificial atuou como aceleradora na conferência simbólica, organização do script Python e estruturação tipográfica do PDF. Contudo, a auditoria dos resultados reais do `np.polyfit`, a definição de como modelar o fenômeno, a escolha dos bairros afetados, a interpretação da saturação das centrais de atendimento e as conclusões de engenharia foram elaboradas e validadas integralmente pelos integrantes da equipe.
+A IA auxiliou na escrita dos scripts de plotagem e na conferência simbólica das etapas de Cálculo, mas coube integralmente ao grupo identificar limitações algébricas da regressão polinomial, corrigir a integral para demanda física não negativa e assegurar honestidade científica ao apresentar o trabalho como exercício acadêmico com dados simulados.

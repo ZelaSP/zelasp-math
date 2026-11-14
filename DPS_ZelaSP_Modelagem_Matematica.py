@@ -1,7 +1,14 @@
 """Differentiated Problem Solving (DPS) — Global Solution 2026.2 · FIAP.
 
-Do Dado à Decisão: Modelagem Matemática da Zeladoria Urbana Pós-Temporal.
+Simulação Acadêmica: Modelagem Matemática da Zeladoria Urbana Pós-Temporal.
 CitizenTech: ZelaSP — Zeladoria Cidadã Inteligente (São Paulo — SP).
+
+Nota de Escopo e Dados:
+    Este trabalho utiliza uma série de dados simulados para fins acadêmicos.
+    O cenário representa a variação horária de relatos de zeladoria ao longo
+    de 24 horas, com crescimento de demanda no período de um temporal e
+    redução posterior. Os valores são parâmetros do exercício de modelagem
+    e não representam uma coleta real do SP156 ou de sensores.
 
 Disciplina: Differentiated Problem Solving (Prof. Jones Egydio)
 Curso: Engenharia de Software — 1º Ano (Campus Paulista/Lins)
@@ -67,10 +74,20 @@ DADOS_ZELASP_CSV = """tempo_h,taxa_relatos_h,bairro_critico,apoios_comunitarios
 23.5,5,Jabaquara,1
 """
 
+# Hipóteses acadêmicas adotadas para o exercício de modelagem (não são medições reais)
 CAPACIDADE_EQUIPES_HORA = 35.0
-FATOR_DUPLICIDADE_SP156 = 1.40
+FATOR_DUPLICIDADE_CENARIO = 1.40
 LIMIAR_GPCT_TAXA = 30.0
+REFORCO_GPCT_CAPACIDADE = 4.85
 META_REDUCAO_DUPLICIDADE = 0.45
+
+TEXTO_ESCOPO_SIMULACAO = (
+    "Este trabalho utiliza uma série de dados simulados para fins acadêmicos. "
+    "O cenário representa a variação horária de relatos de zeladoria ao longo "
+    "de 24 horas, com crescimento de demanda no período de um temporal e redução "
+    "posterior. Os valores são parâmetros do exercício de modelagem e não "
+    "representam uma coleta real do SP156 ou de sensores."
+)
 
 
 def configurar_estilo_visual() -> str:
@@ -142,13 +159,21 @@ def calcular_trapezios(t_dados: np.ndarray, y_dados: np.ndarray) -> float:
     return float(trapezoid(y_dados, t_dados))
 
 
-def calcular_backlog_continuo(
+def criar_taxa_operacional(q: np.poly1d):
+    """Retorna taxa_operacional(t) = max(0, q(t)) para demanda física não negativa."""
+    def taxa_operacional(t):
+        return np.maximum(0.0, q(t))
+
+    return taxa_operacional
+
+
+def calcular_volume_excedente_continuo(
     func_taxa,
     capacidade_fn,
     a: float = 0.0,
     b: float = 24.0,
 ) -> float:
-    """Calcula a área acumulada acima da capacidade operacional no intervalo [a, b]."""
+    """Calcula o volume excedente acumulado acima da capacidade no intervalo [a, b]."""
     grid = np.linspace(a, b, 2401)
     excedente = np.maximum(0.0, func_taxa(grid) - capacidade_fn(grid))
     return float(np.trapezoid(excedente, grid))
@@ -159,19 +184,21 @@ def gerar_graficos(
     df: pd.DataFrame,
     p2: np.poly1d,
     q: np.poly1d,
+    taxa_operacional,
     r2_p2: float,
     r2_q: float,
-    integral_0_24: float,
+    integral_operacional_0_24: float,
+    excedente_dedup: float,
 ) -> list[str]:
-    """Gera e salva os três gráficos oficiais do relatório em alta resolução."""
+    """Gera e salva os três gráficos da simulação acadêmica em alta resolução."""
     os.makedirs(pasta_imagens, exist_ok=True)
     t_dados = df["tempo_h"].values
     y_dados = df["taxa_relatos_h"].values
-    t_continuo = np.linspace(0.5, 23.5, 300)
+    t_continuo = np.linspace(0.0, 24.0, 481)
 
     caminhos = []
 
-    # Gráfico 1: Dispersão exploratória e janela crítica
+    # Gráfico 1: Série simulada (24h) e janela crítica do cenário
     fig1, ax1 = plt.subplots(figsize=(9.5, 4.8))
     ax1.scatter(
         t_dados,
@@ -181,7 +208,7 @@ def gerar_graficos(
         edgecolor="#3b528b",
         linewidth=1.2,
         zorder=3,
-        label="Dados observados (horários)",
+        label="Série simulada (24 faixas horárias)",
     )
     ax1.plot(
         t_dados,
@@ -190,21 +217,21 @@ def gerar_graficos(
         linestyle="--",
         linewidth=1.2,
         alpha=0.65,
-        label="Tendência empírica",
+        label="Perfil da série sintética",
     )
     ax1.axvspan(
         12,
         17,
         color="#fde725",
         alpha=0.18,
-        label="Janela crítica do temporal (12h–17h)",
+        label="Janela de pico do temporal simulado (12h–17h)",
     )
     ax1.set_title(
-        "Evolução Temporal da Taxa de Relatos de Zeladoria Urbana — São Paulo (24h)",
+        "Simulação Acadêmica: Taxa Horária de Relatos de Zeladoria em 24h",
         pad=12,
     )
-    ax1.set_xlabel("Hora do dia t (h)")
-    ax1.set_ylabel("Taxa de novos relatos (relatos/h)")
+    ax1.set_xlabel("Tempo t (horas)")
+    ax1.set_ylabel("Taxa de relatos simulada (relatos/h)")
     ax1.set_xticks(np.arange(0, 25, 2))
     ax1.set_ylim(-2, 70)
     ax1.legend(loc="upper left")
@@ -214,7 +241,7 @@ def gerar_graficos(
     plt.close(fig1)
     caminhos.append(caminho1)
 
-    # Gráfico 2: Comparação entre ajuste quadrático e cúbico com R² reais
+    # Gráfico 2: Ajustes polinomiais e taxa operacional não negativa
     fig2, ax2 = plt.subplots(figsize=(9.5, 5.0))
     ax2.scatter(
         t_dados,
@@ -222,32 +249,42 @@ def gerar_graficos(
         color="#440154",
         s=65,
         zorder=4,
-        label="Registros observados",
+        label="Pontos da série simulada",
     )
     ax2.plot(
         t_continuo,
         p2(t_continuo),
         color="#d99a00",
         linestyle=":",
-        linewidth=2.3,
+        linewidth=2.0,
         label=f"Ajuste Quadrático p\u2082(t) [R\u00b2={r2_p2:.3f}]",
     )
     ax2.plot(
         t_continuo,
         q(t_continuo),
-        color="#21918c",
-        linestyle="-",
-        linewidth=2.5,
+        color="#3b528b",
+        linestyle="--",
+        linewidth=1.6,
+        alpha=0.85,
         label=f"Ajuste Cúbico q(t) [R\u00b2={r2_q:.3f}]",
     )
+    ax2.plot(
+        t_continuo,
+        taxa_operacional(t_continuo),
+        color="#21918c",
+        linestyle="-",
+        linewidth=2.6,
+        label="Taxa operacional = max(0, q(t))",
+    )
+    ax2.axhline(0, color="#64748b", linewidth=0.9, alpha=0.6)
     ax2.set_title(
-        "Comparação dos Modelos de Regressão Polinomial para Demanda de Zeladoria",
+        "Regressão Polinomial sobre Série Simulada e Taxa Operacional Não Negativa",
         pad=12,
     )
-    ax2.set_xlabel("Hora do dia t (h)")
-    ax2.set_ylabel("Taxa de chegada q(t) (relatos/h)")
+    ax2.set_xlabel("Tempo t (horas)")
+    ax2.set_ylabel("Taxa de relatos (relatos/h)")
     ax2.set_xticks(np.arange(0, 25, 2))
-    ax2.set_ylim(-5, 70)
+    ax2.set_ylim(-22, 70)
     ax2.legend(loc="upper left")
     plt.tight_layout()
     caminho2 = os.path.join(pasta_imagens, "grafico2_ajustes.png")
@@ -255,57 +292,57 @@ def gerar_graficos(
     plt.close(fig2)
     caminhos.append(caminho2)
 
-    # Gráfico 3: Integral acumulada, curva SP 156 (1,4x) e sobrecarga operacional
+    # Gráfico 3: Demanda não negativa, fator 1,40 e volume excedente acumulado acima de S
     fig3, ax3 = plt.subplots(figsize=(9.5, 5.0))
-    q_vals = np.maximum(0.0, q(t_continuo))
-    q_sp156 = FATOR_DUPLICIDADE_SP156 * q_vals
+    op_vals = taxa_operacional(t_continuo)
+    op_inflada = FATOR_DUPLICIDADE_CENARIO * op_vals
 
     ax3.plot(
         t_continuo,
-        q_sp156,
+        op_inflada,
         color="#440154",
         linestyle="--",
         linewidth=1.8,
-        alpha=0.8,
-        label="Demanda SP 156 sem triagem: 1,40·q(t)",
+        alpha=0.85,
+        label="Cenário com duplicidade (1,40 · taxa_operacional(t))",
     )
     ax3.plot(
         t_continuo,
-        q_vals,
+        op_vals,
         color="#21918c",
         linewidth=2.5,
-        label="Taxa de chegada ZelaSP: q(t) sem duplicidade",
+        label="Base deduplicada: taxa_operacional(t) = max(0, q(t))",
     )
     ax3.fill_between(
         t_continuo,
         0,
-        q_vals,
+        op_vals,
         color="#21918c",
         alpha=0.22,
-        label=f"Área acumulada ∫ q(t) dt = {integral_0_24:.2f} relatos",
+        label=f"Integral operacional ∫ max(0, q(t)) dt = {integral_operacional_0_24:.2f} relatos",
     )
     ax3.axhline(
         CAPACIDADE_EQUIPES_HORA,
         color="#d95f02",
         linestyle="-.",
         linewidth=1.8,
-        label=f"Capacidade de atendimento (S = {int(CAPACIDADE_EQUIPES_HORA)} equipes/h)",
+        label=f"Capacidade hipotética (S = {int(CAPACIDADE_EQUIPES_HORA)} atendimentos/h)",
     )
     ax3.fill_between(
         t_continuo,
         CAPACIDADE_EQUIPES_HORA,
-        q_vals,
-        where=(q_vals >= CAPACIDADE_EQUIPES_HORA),
+        op_vals,
+        where=(op_vals >= CAPACIDADE_EQUIPES_HORA),
         color="#e7298a",
         alpha=0.35,
-        label="Backlog residual acima de S com q(t)",
+        label=f"Volume excedente acumulado acima de S ({excedente_dedup:.2f} relatos)",
     )
     ax3.set_title(
-        "Curva de Fluxo de Ocorrências, Duplicidade (1,4x) e Backlog Acumulado",
+        "Simulação: Taxa Operacional, Fator 1,40 e Volume Excedente Acumulado",
         pad=12,
     )
-    ax3.set_xlabel("Hora do dia t (h)")
-    ax3.set_ylabel("Taxa de fluxo (chamados/h)")
+    ax3.set_xlabel("Tempo t (horas)")
+    ax3.set_ylabel("Taxa de fluxo simulada (chamados/h)")
     ax3.set_xticks(np.arange(0, 25, 2))
     ax3.set_ylim(0, 70)
     ax3.legend(loc="upper left")
@@ -319,7 +356,7 @@ def gerar_graficos(
 
 
 def main() -> None:
-    """Executa toda a pipeline matemática (estatística, ajuste, derivadas, limites, integrais e GPCT)."""
+    """Executa a simulação acadêmica (estatística, ajuste, derivadas, limites, integrais e GPCT)."""
     fonte_ativa = configurar_estilo_visual()
     df = carregar_e_validar_dados()
 
@@ -327,12 +364,13 @@ def main() -> None:
     y_dados = df["taxa_relatos_h"].values
 
     print("=" * 72)
-    print("ZELASP — MODELAGEM MATEMÁTICA (DIFFERENTIATED PROBLEM SOLVING)")
+    print("ZELASP — SIMULAÇÃO ACADÊMICA (DIFFERENTIATED PROBLEM SOLVING)")
+    print(f"Escopo: {TEXTO_ESCOPO_SIMULACAO}")
     print(f"Fonte gráfica ativa: {fonte_ativa}")
     print("=" * 72)
 
-    # 1. Estatística Descritiva e Taxa Média de Variação
-    total_observado = float(df["taxa_relatos_h"].sum())
+    # 1. Estatística Descritiva da Série Simulada
+    total_simulado = float(df["taxa_relatos_h"].sum())
     media_horaria = float(df["taxa_relatos_h"].mean())
     idx_max = df["taxa_relatos_h"].idxmax()
     idx_min = df["taxa_relatos_h"].idxmin()
@@ -341,29 +379,31 @@ def main() -> None:
     y_14h5 = float(df.loc[df["tempo_h"] == 14.5, "taxa_relatos_h"].iloc[0])
     taxa_media_var = (y_14h5 - y_9h5) / (14.5 - 9.5)
 
-    print("\n[1] ESTATÍSTICA DESCRITIVA (24h)")
-    print(f"Total observado no dia:     {total_observado:.0f} relatos")
-    print(f"Taxa média horária:         {media_horaria:.2f} relatos/h")
+    print("\n[1] ESTATÍSTICA DESCRITIVA DA SÉRIE SIMULADA (24h)")
+    print(f"Soma da série simulada (24h): {total_simulado:.0f} relatos")
+    print(f"Taxa média horária:           {media_horaria:.2f} relatos/h")
     print(
-        f"Pico observado:             {df.loc[idx_max, 'taxa_relatos_h']} relatos/h "
-        f"em t = {df.loc[idx_max, 'tempo_h']:.1f} h ({df.loc[idx_max, 'bairro_critico']})"
+        f"Pico da série simulada:       {df.loc[idx_max, 'taxa_relatos_h']} relatos/h "
+        f"em t = {df.loc[idx_max, 'tempo_h']:.1f} h (contexto: {df.loc[idx_max, 'bairro_critico']})"
     )
     print(
-        f"Menor demanda observada:    {df.loc[idx_min, 'taxa_relatos_h']} relatos/h "
+        f"Menor taxa da série:          {df.loc[idx_min, 'taxa_relatos_h']} relatos/h "
         f"em t = {df.loc[idx_min, 'tempo_h']:.1f} h"
     )
-    print(f"Taxa média (9,5h -> 14,5h): +{taxa_media_var:.2f} relatos/h²")
+    print(f"Taxa média (9,5h -> 14,5h):   +{taxa_media_var:.2f} relatos/h²")
 
-    # 2. Ajuste por Mínimos Quadrados
+    # 2. Ajuste por Mínimos Quadrados + Taxa Operacional Não Negativa
     coef_p2 = np.polyfit(t_dados, y_dados, deg=2)
     coef_p3 = np.polyfit(t_dados, y_dados, deg=3)
     p2 = np.poly1d(coef_p2)
     q = np.poly1d(coef_p3)
+    taxa_operacional = criar_taxa_operacional(q)
+    raizes_q = sorted(float(r.real) for r in np.roots(q.coef) if abs(r.imag) < 1e-9)
 
     rmse_p2, r2_p2 = calcular_metricas(y_dados, p2(t_dados))
     rmse_q, r2_q = calcular_metricas(y_dados, q(t_dados))
 
-    print("\n[2] AJUSTE DE CURVAS POR MÍNIMOS QUADRADOS")
+    print("\n[2] AJUSTE POLINOMIAL E TAXA OPERACIONAL NÃO NEGATIVA")
     print(
         f"Quadrático p2(t) = {coef_p2[0]:.5f}*t² + {coef_p2[1]:.5f}*t + ({coef_p2[2]:.5f}) "
         f"| R² = {r2_p2:.4f} | RMSE = {rmse_p2:.4f}"
@@ -373,8 +413,12 @@ def main() -> None:
         f"({coef_p3[2]:.5f})*t + ({coef_p3[3]:.5f}) "
         f"| R² = {r2_q:.4f} | RMSE = {rmse_q:.4f}"
     )
+    print(
+        "Raízes de q(t) em [0, 24] (transições da taxa_operacional(t) = max(0, q(t))): "
+        + ", ".join(f"{r:.4f} h" for r in raizes_q)
+    )
 
-    # 3. Derivadas, Bhaskara e Otimização
+    # 3. Derivadas e Pontos Críticos do Polinômio Cúbico q(t)
     dq = q.deriv()
     d2q = q.deriv(2)
     a_b, b_b, c_b = dq.coef
@@ -382,123 +426,133 @@ def main() -> None:
     raiz_delta = math.sqrt(discriminante)
     t_pico = (-b_b - raiz_delta) / (2 * a_b)
     t_vale = (-b_b + raiz_delta) / (2 * a_b)
+    subestimacao_pico_pct = (1.0 - float(q(t_pico)) / float(df.loc[idx_max, "taxa_relatos_h"])) * 100.0
 
-    print("\n[3] DERIVADAS, PONTOS CRÍTICOS E TAXAS INSTANTÂNEAS")
+    print("\n[3] ESTUDO ALGÉBRICO DE q(t) — DERIVADAS E PONTOS CRÍTICOS")
     print(f"q'(t)  = {a_b:.5f}*t² + {b_b:.5f}*t + ({c_b:.5f})")
     print(f"q''(t) = {d2q.coef[0]:.5f}*t + ({d2q.coef[1]:.5f})")
     print(f"Delta de Bhaskara = {discriminante:.5f} | sqrt(Delta) = {raiz_delta:.5f}")
     print(
-        f"Máximo Local: t1 = {t_pico:.4f} h | q(t1) = {q(t_pico):.2f} relatos/h | "
+        f"Máximo Local de q(t): t1 = {t_pico:.4f} h | q(t1) = {q(t_pico):.2f} relatos/h | "
         f"q''(t1) = {d2q(t_pico):.4f} < 0"
     )
     print(
-        f"Mínimo Local: t2 = {t_vale:.4f} h | q(t2) = {q(t_vale):.2f} relatos/h | "
-        f"q''(t2) = {d2q(t_vale):+.4f} > 0"
+        f"Subestimação do pico ({q(t_pico):.2f} vs {df.loc[idx_max, 'taxa_relatos_h']} simulado): "
+        f"{subestimacao_pico_pct:.2f}%"
+    )
+    print(
+        f"Mínimo Local de q(t): t2 = {t_vale:.4f} h | q(t2) = {q(t_vale):.2f} relatos/h "
+        "(valor negativo é limitação algébrica do ajuste; taxa_operacional = 0 nos trechos recortados)"
     )
     for rotulo, instante in [
         ("4,0 h (Manhã)", 4.0),
         (f"{t_pico:.2f} h (Pico)", t_pico),
         ("18,0 h (Anoitecer)", 18.0),
     ]:
-        print(f"  Taxa instantânea em t = {rotulo}: q' = {dq(instante):+.4f} relatos/h²")
+        print(f"  Taxa instantânea de q(t) em t = {rotulo}: q' = {dq(instante):+.4f} relatos/h²")
 
-    # 4. Limites e Dinâmica de Filas
-    pico_sp156_continuo = FATOR_DUPLICIDADE_SP156 * q(t_pico)
-    pico_sp156_discreto = FATOR_DUPLICIDADE_SP156 * float(df.loc[idx_max, "taxa_relatos_h"])
-    fila_sp156 = 0.0
-    fila_zelasp = 0.0
+    # 4. Limites e Dinâmica de Fila Pendente (Hipótese S = 35 atendimentos/h)
+    pico_inflado_continuo = FATOR_DUPLICIDADE_CENARIO * float(taxa_operacional(t_pico))
+    pico_inflado_discreto = FATOR_DUPLICIDADE_CENARIO * float(df.loc[idx_max, "taxa_relatos_h"])
+    fila_pendente_140 = 0.0
+    fila_pendente_dedup = 0.0
     for valor in y_dados:
-        fila_sp156 = max(0.0, fila_sp156 + FATOR_DUPLICIDADE_SP156 * valor - CAPACIDADE_EQUIPES_HORA)
-        fila_zelasp = max(0.0, fila_zelasp + valor - CAPACIDADE_EQUIPES_HORA)
+        fila_pendente_140 = max(
+            0.0,
+            fila_pendente_140 + FATOR_DUPLICIDADE_CENARIO * valor - CAPACIDADE_EQUIPES_HORA,
+        )
+        fila_pendente_dedup = max(0.0, fila_pendente_dedup + valor - CAPACIDADE_EQUIPES_HORA)
 
-    print("\n[4] LIMITES E SATURAÇÃO OPERACIONAL (S = 35 equipes/h)")
-    print(f"Limite contínuo no pico q(t1):       {q(t_pico):.2f} relatos/h")
+    print("\n[4] LIMITES E FILA PENDENTE NA SIMULAÇÃO (HIPÓTESE S = 35 atendimentos/h)")
+    print(f"Limite no pico contínuo taxa_op(t1): {taxa_operacional(t_pico):.2f} relatos/h")
     print(
-        f"Pico inflado SP 156 (1,40x):         {pico_sp156_continuo:.2f} chamados/h "
-        f"(discreto: {pico_sp156_discreto:.1f} chamados/h)"
+        f"Pico com fator 1,40:                 {pico_inflado_continuo:.2f} chamados/h "
+        f"(discreto: {pico_inflado_discreto:.1f} chamados/h)"
     )
-    print(f"Saldo de fila às 24h (SP 156 1,4x):  {fila_sp156:.1f} chamados represados")
-    print(f"Saldo de fila às 24h (ZelaSP limpo): {fila_zelasp:.1f} chamados represados")
+    print(f"Fila pendente às 24h (fator 1,40):   {fila_pendente_140:.1f} chamados")
+    print(f"Fila pendente às 24h (deduplicado):  {fila_pendente_dedup:.1f} chamados")
 
-    # 5. Cálculo Integral e Regra dos Trapézios
+    # 5. Cálculo Integral: Taxa Operacional Principal vs. Primitiva Algébrica Q(t)
     q_primitiva = np.polyint(q)
-    integral_05_235, _ = quad(q, 0.5, 23.5)
-    integral_0_24, _ = quad(q, 0.0, 24.0)
+    integral_q_0_24, _ = quad(q, 0.0, 24.0)
+    integral_op_0_24, _ = quad(
+        taxa_operacional,
+        0.0,
+        24.0,
+        points=raizes_q,
+    )
     integral_trapz = calcular_trapezios(t_dados, y_dados)
-    erro_abs = abs(integral_0_24 - total_observado)
-    erro_rel = (erro_abs / total_observado) * 100.0
-    erro_trapz = (abs(integral_trapz - total_observado) / total_observado) * 100.0
 
-    print("\n[5] INTEGRAIS DEFINIDAS E PRIMITIVA Q(t)")
+    diff_op_abs = abs(integral_op_0_24 - total_simulado)
+    diff_op_rel = (diff_op_abs / total_simulado) * 100.0
+    diff_q_rel = (abs(integral_q_0_24 - total_simulado) / total_simulado) * 100.0
+    erro_trapz = (abs(integral_trapz - total_simulado) / total_simulado) * 100.0
+
+    print("\n[5] INTEGRAIS DEFINIDAS (TAXA OPERACIONAL VS. PRIMITIVA ALGÉBRICA)")
     print(
-        f"Q(t) = {q_primitiva.coef[0]:.6f}*t⁴ + {q_primitiva.coef[1]:.6f}*t³ + "
+        f"Integral operacional ∫_0^24 max(0, q(t)) dt = {integral_op_0_24:.2f} relatos "
+        f"(diferença vs soma simulada {total_simulado:.0f}: {diff_op_abs:.2f} | {diff_op_rel:.2f}%)"
+    )
+    print(
+        f"Primitiva algébrica Q(t) = {q_primitiva.coef[0]:.6f}*t⁴ + {q_primitiva.coef[1]:.6f}*t³ + "
         f"({q_primitiva.coef[2]:.6f})*t² + {q_primitiva.coef[3]:.6f}*t + C"
     )
     print(
-        f"Q(23,5) = {q_primitiva(23.5):.2f} | Q(0,5) = {q_primitiva(0.5):.2f} | "
-        f"Integral [0,5; 23,5] = {integral_05_235:.2f} relatos"
+        f"Integral algébrica pura ∫_0^24 q(t) dt     = {integral_q_0_24:.2f} relatos "
+        f"(diferença nominal {diff_q_rel:.2f}% por compensar trechos negativos de q)"
     )
-    print(
-        f"Q(24,0) = {q_primitiva(24.0):.2f} | Q(0,0) = {q_primitiva(0.0):.2f} | "
-        f"Integral [0; 24]      = {integral_0_24:.2f} relatos"
-    )
-    print(
-        f"Erro absoluto vs total real ({total_observado:.0f}): {erro_abs:.2f} relatos "
-        f"(Erro relativo = {erro_rel:.2f}%)"
-    )
-    print(f"Regra dos trapézios: {integral_trapz:.2f} relatos (erro = {erro_trapz:.2f}%)")
+    print(f"Regra dos trapézios na série discreta:      {integral_trapz:.2f} relatos (dif. = {erro_trapz:.2f}%)")
 
-    # 6. Decisão GPCT e Simulação de Redução de Backlog
+    # 6. Cenários Simulados de Volume Excedente Acumulado e GPCT Didático
     t_grid = np.linspace(0.0, 24.0, 2401)
-    mask_gpct = (q(t_grid) >= LIMIAR_GPCT_TAXA) & (dq(t_grid) > 0.0)
+    mask_gpct = (taxa_operacional(t_grid) >= LIMIAR_GPCT_TAXA) & (dq(t_grid) > 0.0)
     t_inicio_gpct = float(t_grid[mask_gpct][0])
     antecipacao_h = t_pico - t_inicio_gpct
 
-    backlog_sp156 = calcular_backlog_continuo(
-        lambda x: FATOR_DUPLICIDADE_SP156 * q(x),
+    excedente_140 = calcular_volume_excedente_continuo(
+        lambda x: FATOR_DUPLICIDADE_CENARIO * taxa_operacional(x),
         lambda x: np.full_like(x, CAPACIDADE_EQUIPES_HORA),
     )
-    # Meta realista de redução de duplicidade (-45% da parcela repetida) + efeito combinado GPCT
-    fator_meta = 1.0 + (FATOR_DUPLICIDADE_SP156 - 1.0) * (1.0 - META_REDUCAO_DUPLICIDADE)
-    backlog_meta = calcular_backlog_continuo(
-        lambda x: fator_meta * q(x),
+    fator_meta = 1.0 + (FATOR_DUPLICIDADE_CENARIO - 1.0) * (1.0 - META_REDUCAO_DUPLICIDADE)
+    excedente_meta_45 = calcular_volume_excedente_continuo(
+        lambda x: fator_meta * taxa_operacional(x),
         lambda x: np.full_like(x, CAPACIDADE_EQUIPES_HORA),
     )
-    reducao_meta_pct = (1.0 - backlog_meta / backlog_sp156) * 100.0
+    reducao_meta_pct = (1.0 - excedente_meta_45 / excedente_140) * 100.0
 
-    # Reforço operacional GPCT sobre a base já deduplicada q(t) (+4,85 equipes/h na janela de disparo)
-    backlog_base_q = calcular_backlog_continuo(
-        q,
+    excedente_dedup = calcular_volume_excedente_continuo(
+        taxa_operacional,
         lambda x: np.full_like(x, CAPACIDADE_EQUIPES_HORA),
     )
-    backlog_gpct_q = calcular_backlog_continuo(
-        q,
+    reducao_dedup_pct = (1.0 - excedente_dedup / excedente_140) * 100.0
+
+    excedente_gpct = calcular_volume_excedente_continuo(
+        taxa_operacional,
         lambda x: np.where(
-            (q(x) >= LIMIAR_GPCT_TAXA) & (dq(x) > 0.0),
-            CAPACIDADE_EQUIPES_HORA + 4.85,
+            (taxa_operacional(x) >= LIMIAR_GPCT_TAXA) & (dq(x) > 0.0),
+            CAPACIDADE_EQUIPES_HORA + REFORCO_GPCT_CAPACIDADE,
             CAPACIDADE_EQUIPES_HORA,
         ),
     )
-    reducao_gpct_pct = (1.0 - backlog_gpct_q / backlog_base_q) * 100.0
-    reducao_total_dedup_pct = (1.0 - backlog_base_q / backlog_sp156) * 100.0
+    reducao_gpct_pct = (1.0 - excedente_gpct / excedente_dedup) * 100.0
 
-    print("\n[6] GATILHO PREDITIVO DE CONTINGÊNCIA TERRITORIAL (GPCT)")
+    print("\n[6] ESTUDO DIDÁTICO DO GPCT E VOLUME EXCEDENTE ACUMULADO ACIMA DE S=35")
     print(
-        f"Início do alerta GPCT (q(t) >= 30 e q'(t) > 0): t = {t_inicio_gpct:.2f} h "
-        f"(antecipa o pico contínuo em {antecipacao_h:.2f} h; >= 2h antes do pico observado)"
+        f"Início do gatilho simulado (taxa_op >= 30 e q' > 0): t = {t_inicio_gpct:.2f} h "
+        f"(antecipa o pico contínuo em {antecipacao_h:.2f} h)"
     )
-    print(f"Backlog contínuo SP 156 (1,40x):               {backlog_sp156:.2f} chamados")
+    print(f"Volume excedente (fator 1,40, S=35):            {excedente_140:.2f} chamados [Referência]")
     print(
-        f"Backlog com meta -45% duplicidade ({fator_meta:.2f}x):  {backlog_meta:.2f} chamados "
-        f"(-{reducao_meta_pct:.1f}%)"
-    )
-    print(
-        f"Backlog ZelaSP deduplicado q(t) sem reforço:   {backlog_base_q:.2f} relatos "
-        f"(-{reducao_total_dedup_pct:.1f}% vs SP 156)"
+        f"Volume excedente (meta -45% dup., fator {fator_meta:.2f}): {excedente_meta_45:.2f} chamados "
+        f"(-{reducao_meta_pct:.1f}% vs {excedente_140:.2f})"
     )
     print(
-        f"Backlog ZelaSP q(t) + reforço GPCT (+13,9% S): {backlog_gpct_q:.2f} relatos "
-        f"(-{reducao_gpct_pct:.1f}% sobre o residual)"
+        f"Volume excedente (deduplicado, fator 1,00):     {excedente_dedup:.2f} relatos "
+        f"(-{reducao_dedup_pct:.1f}% vs {excedente_140:.2f})"
+    )
+    print(
+        f"Volume excedente (dedup. + reforço GPCT +4,85): {excedente_gpct:.2f} relatos "
+        f"(-{reducao_gpct_pct:.1f}% frente a {excedente_dedup:.2f})"
     )
 
     pasta_imagens = os.path.join(os.path.dirname(os.path.abspath(__file__)), "imagens")
@@ -507,9 +561,11 @@ def main() -> None:
         df=df,
         p2=p2,
         q=q,
+        taxa_operacional=taxa_operacional,
         r2_p2=r2_p2,
         r2_q=r2_q,
-        integral_0_24=integral_0_24,
+        integral_operacional_0_24=integral_op_0_24,
+        excedente_dedup=excedente_dedup,
     )
     print("\n[7] GRÁFICOS GERADOS EM imagens/:")
     for arq in arquivos:
