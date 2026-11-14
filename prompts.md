@@ -15,6 +15,7 @@
 ## 1. Ferramentas de IA Utilizadas e Finalidades
 
 * **Google Antigravity (Gemini & Claude):** Utilizado como copiloto analítico para estruturar a notação matemática das equações, organizar o script Python (`DPS_ZelaSP_Modelagem_Matematica.py`), implementar o tratamento não negativo $\text{taxa\_operacional}(t) = \max(0, q(t))$ e gerar o relatório técnico em HTML/PDF sem falhas tipográficas.
+* **ChatGPT / Codex (OpenAI):** Utilizado na auditoria técnica cruzada da entrega de Matemática e na elaboração do plano de ajustes, apontando as limitações algébricas do ajuste cúbico (trechos negativos e subestimação de pico), a necessidade de corrigir a integral para demanda física não negativa ($\max(0, q(t))$) e a separação correta entre volume excedente acumulado e fila pendente discreta.
 
 ---
 
@@ -39,9 +40,9 @@
 1. **Enquadramento Claro como Simulação Acadêmica:**
    * *Ajuste do Grupo:* A equipe definiu os parâmetros sintéticos de 24 faixas horárias (com menor demanda na madrugada e pico de 62 relatos/h às 14h30) e explicitou que $S=35$, fator $1{,}40$, limiar $30$ e reforço $+4{,}85$ são hipóteses didáticas do exercício.
 2. **Padronização da Curva Não Negativa (`taxa_operacional(t) = max(0, q(t))`):**
-   * Na revisão crítica, identificamos que a integral bruta $\int_0^{24} q(t)\,dt = 516{,}36$ compensava trechos negativos do polinômio cúbico. Implementamos `criar_taxa_operacional(q)` no script Python, obtendo $\int_0^{24} \max(0, q(t))\,dt = 527{,}69\text{ relatos}$ (diferença de $2{,}07\%$ para $517$), e reconhecemos os três pontos de transição onde $q(t) = 0$ ($0{,}5606\text{ h}$, $1{,}7859\text{ h}$ e $22{,}7688\text{ h}$).
+   * Na revisão crítica conduzida com apoio do **ChatGPT/Codex** e validada pelo grupo, constatou-se que a integral bruta $\int_0^{24} q(t)\,dt = 516{,}36$ compensava trechos negativos do polinômio cúbico. Com apoio do Google Antigravity e revisão da equipe, implementou-se `criar_taxa_operacional(q)` no script Python, obtendo $\int_0^{24} \max(0, q(t))\,dt = 527{,}69\text{ relatos}$ (diferença de $2{,}07\%$ para $517$), e registraram-se os três pontos de transição onde $q(t) = 0$ ($0{,}5606\text{ h}$, $1{,}7859\text{ h}$ e $22{,}7688\text{ h}$).
 3. **Análise Crítica de Limitações:**
-   * Registramos a subestimação do pico ($43{,}55$ vs $62$ simulado, $\approx 29{,}76\%$), distinguimos "volume excedente acumulado acima da capacidade" (integral contínua) de "fila pendente" (saldo discreto) e separamos claramente o estudo didático do GPCT do indicador simples presente no protótipo Web.
+   * A partir dos apontamentos levantados com o Codex e revisados pelo grupo, registraram-se explicitamente a subestimação do pico ($43{,}55$ vs $62$ simulado, $\approx 29{,}76\%$), a distinção entre "volume excedente acumulado acima da capacidade" (integral contínua) e "fila pendente" (saldo discreto) e a separação entre o estudo didático do GPCT e o indicador simples presente no protótipo Web.
 
 ---
 
@@ -55,4 +56,4 @@
 
 ## 5. Análise Crítica e Reflexão Ética
 
-A IA auxiliou na escrita dos scripts de plotagem e na conferência simbólica das etapas de Cálculo, mas coube integralmente ao grupo identificar limitações algébricas da regressão polinomial, corrigir a integral para demanda física não negativa e assegurar honestidade científica ao apresentar o trabalho como exercício acadêmico com dados simulados.
+As ferramentas de IA tiveram participação relevante tanto na produção inicial quanto na revisão técnica do trabalho: o **Google Antigravity** auxiliou na escrita dos scripts de plotagem, na implementação em Python e na geração do relatório em HTML/PDF, enquanto o **ChatGPT/Codex** apoiou a auditoria matemática crítica que identificou limitações algébricas da regressão polinomial (trechos negativos e subestimação do pico) e orientou a correção da integral para demanda física não negativa ($\text{taxa\_operacional}(t) = \max(0, q(t))$). Ao grupo coube avaliar e aprovar as decisões do plano de revisão, conferir os cálculos e saídas numéricas do script `DPS_ZelaSP_Modelagem_Matematica.py`, validar visualmente os gráficos e o PDF e assegurar honestidade acadêmica ao apresentar o estudo como simulação didática com dados sintéticos.
