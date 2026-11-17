@@ -44,7 +44,8 @@ zelasp-math/
 ├── relatorio_tecnico_dps_zelasp.pdf     # Relatório técnico em PDF (com fórmulas e gráficos)
 ├── relatorio_tecnico_dps_zelasp.md      # Relatório técnico em Markdown
 ├── imagens/                             # Gráficos da simulação em alta resolução
-├── prompts.md                           # Documentação ética do uso de IA
+├── prompts.md                           # Documentação ética do uso de IA (padrão prompts.md)
+├── AI.md                                # Documentação ética do uso de IA (padrão AI.md)
 └── README.md                            # Documentação geral da entrega de DPS
 ```
 
