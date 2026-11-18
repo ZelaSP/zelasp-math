@@ -21,10 +21,15 @@
 
 ## 📋 A Ficha da CitizenTech (Contexto e Escopo)
 
-* **Nome da CitizenTech:** ZelaSP
+* **Nome da CitizenTech:** ZelaSP (protótipo acadêmico voltado a facilitar o registro e organizar informações para a triagem).
 * **Cidade e Bairros de Referência:** São Paulo — SP (**Jabaquara, Vila Mariana, Saúde, Bela Vista, Mooca e Vila Mascote**).
 * **Cidadão Beneficiado:** Moradores, pedestres e comerciantes expostos a ocorrências de zeladoria urbana (fios soltos/energizados, tampas de bueiro faltantes, buracos e entulho em calçadas).
-* **Problema em uma Frase:** Canais tradicionais de zeladoria recebem solicitações repetidas para o mesmo ponto em cenários de alta demanda pós-temporal, dificultando a triagem de risco e a visualização coletiva de chamados já abertos no quarteirão.
+* **Contexto, Diferencial Proposto e Limites de Evidência:**
+  * O **SP156 já fornece protocolo e formas de acompanhamento** (conforme as [perguntas frequentes oficiais do SP156](https://prefeitura.sp.gov.br/web/inovacao/w/acesso_a_informacao/350229)), de modo que o acompanhamento isoladamente não sustenta o diferencial do ZelaSP.
+  * O diferencial proposto passa a ser a **combinação de registro simples, apoio comunitário e organização das informações por risco**. O benefício para o cidadão e para a operação pública é uma **hipótese a validar**: o projeto ainda não demonstrou redução real do prazo de atendimento da Prefeitura, pois garantir análise, execução e retorno depende também do processo público e de integração operacional, que o ZelaSP ainda não possui.
+  * Não há evidência suficiente no projeto para apontar a maior dificuldade atual da Prefeitura ou de uma subprefeitura; integração dos sistemas, qualidade das informações, encaminhamento, equipes e recursos são aspectos a investigar, e não um diagnóstico comprovado pelo grupo.
+  * Contexto motivador (dois relatos informais, sem medição realizada pelo grupo):
+    > Em duas conversas informais, pessoas relataram tempos aproximados de 30–40 minutos para registrar um pedido de remoção de árvore e de cerca de 10 minutos para solicitar uma lixeira para poste. Os relatos motivam investigar a dificuldade do registro por tipo de serviço. O grupo ainda não realizou uma comparação cronometrada entre o ZelaSP e o canal oficial.
 * **Resumo das Formulações do Projeto:**
   * **Arquitetura:** Web com MockAPI e ViaCEP; CLI Python com JSON; estudo matemático independente; integração entre módulos e IoT prevista na evolução.
   * **Tempo de relato:** Meta de registro em até 15 segundos, a validar com testes de usabilidade (sem estimativa numérica não comprovada para canais oficiais externos).
@@ -39,7 +44,7 @@
 
 Em bairros adensados de São Paulo com rede aérea mista (como **Jabaquara, Vila Mariana, Saúde, Bela Vista, Mooca e Vila Mascote**), episódios de chuva forte concentram demandas simultâneas de zeladoria ao longo de poucas horas.
 
-Para o exercício de modelagem matemática em Cálculo Diferencial e Integral, construiu-se uma **série sintética de 24 faixas horárias** ($t_i = 0{,}5; 1{,}5; \dots; 23{,}5\text{ h}$):
+Para o exercício de modelagem matemática em Cálculo Diferencial e Integral, construiu-se uma **série sintética de 24 valores (24 faixas horárias)** ($t_i = 0{,}5; 1{,}5; \dots; 23{,}5\text{ h}$) exclusivamente para fins acadêmicos (essa simulação não representa medição do SP156, coleta de sensores nem teste com pessoas):
 * Menor taxa simulada na madrugada ($2\text{ relatos/h}$ em $t = 2{,}5\text{ h}$ e $3{,}5\text{ h}$);
 * Crescimento contínuo a partir do fim da manhã até o pico de **$62\text{ relatos/h}$ às 14h30** ($t = 14{,}5\text{ h}$);
 * Desaceleração gradual no fim da tarde e noite até $5\text{ relatos/h}$ em $t = 23{,}5\text{ h}$.

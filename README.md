@@ -20,11 +20,12 @@
 
 ## 📋 A Ficha da CitizenTech (Modelagem Matemática)
 
-* **Nome da CitizenTech:** ZelaSP
+* **Nome da CitizenTech:** ZelaSP (protótipo acadêmico que busca facilitar o registro e organizar informações para a triagem; o benefício para o cidadão e para a operação pública é uma hipótese a validar, sem demonstração de redução real do prazo de atendimento da Prefeitura).
 * **Cidade e Bairros de Referência:** São Paulo — SP (**Jabaquara, Vila Mariana, Saúde, Bela Vista, Mooca e Vila Mascote**).
 * **Cidadão Beneficiado:** Moradores, pedestres e comerciantes expostos a fios soltos/energizados, bueiros abertos, buracos e descarte de entulho após temporais.
-* **Problema em uma Frase:** O volume de ocorrências e chamados duplicados sobrecarrega a triagem urbana pós-temporal, dificultando a identificação de cenários críticos sem apoio quantitativo.
-* **Como a Matemática Resolve:** Ajusta um modelo cúbico $q(t)$ à série simulada de 24h, adota a demanda física não negativa $\text{taxa\_operacional}(t) = \max(0, q(t))$ para integrais e simulações de capacidade, analisa pontos críticos via derivadas ($q'(t)$, $q''(t)$) e explora um estudo didático de antecipação de demanda (GPCT).
+* **Diferencial Proposto e Limites de Evidência:** O SP156 já fornece protocolo e formas de acompanhamento ([perguntas frequentes oficiais do SP156](https://prefeitura.sp.gov.br/web/inovacao/w/acesso_a_informacao/350229)), de modo que acompanhamento isoladamente não sustenta o diferencial do ZelaSP. O diferencial proposto combina **registro simples, apoio comunitário e organização das informações por risco** (cuja utilidade para o atendimento público precisa ser avaliada; aspectos internos das subprefeituras como integração, qualidade das informações, encaminhamento, equipes e recursos são pontos a investigar, não diagnóstico comprovado).
+  > Em duas conversas informais, pessoas relataram tempos aproximados de 30–40 minutos para registrar um pedido de remoção de árvore e de cerca de 10 minutos para solicitar uma lixeira para poste. Os relatos motivam investigar a dificuldade do registro por tipo de serviço. O grupo ainda não realizou uma comparação cronometrada entre o ZelaSP e o canal oficial.
+* **Como a Matemática Modela o Cenário Simulado:** Identifica os 24 valores horários como dados simulados construídos para fins acadêmicos (não são medição do SP156 nem teste com pessoas), ajusta um modelo cúbico $q(t)$ à série simulada de 24h, adota a demanda física não negativa $\text{taxa\_operacional}(t) = \max(0, q(t))$ para integrais e simulações de capacidade, analisa pontos críticos via derivadas ($q'(t)$, $q''(t)$) e explora um estudo didático de antecipação de demanda (GPCT).
 * **Formulações Comuns do Projeto:**
   * **Arquitetura:** Web com MockAPI e ViaCEP; CLI Python com JSON; estudo matemático independente; integração entre módulos e IoT prevista na evolução.
   * **Tempo de relato:** Meta de registro em até 15 segundos, a validar com testes de usabilidade.
